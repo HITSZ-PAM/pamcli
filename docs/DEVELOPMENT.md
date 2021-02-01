@@ -16,6 +16,8 @@ go env -w GOPROXY=https://mirrors.aliyun.com/goproxy/,direct
 
 Checkout - Pull Request模式
 
+Checkout 一个新的分支，完成对代码的修改以后创建一个Pull Request
+
 ### Commit Message规范
 使用AngularJS规范的 commit message
 ，格式如下
@@ -73,8 +75,30 @@ Breaks foo.bar api, foo.baz should be used instead
 # 项目开发
 
 ## 概要设计
+程序的实现分为几个部分
+- 初始化：创建需要的各个对象。创建 httpClient 并做好认证。
+- 读取全部环境变量并选出含有`pam://`的进行接下来的操作
+- 将这些环境变量逐一交由 Client 解析
+- 将新的环境变量与不需要修改的环境变量注入目标程序的运行环境
+- 创建子进程
+- 设定好stdin pass through, signal pass through
+- 运行子进程
+- 等待子进程退出后退出
 
 ## 详细设计
+### 初始化
+- 读取环境变量，获取认证用的`token`
+- 使用`token`创建Client，例如命名为pamClient
+
+### pamClient
+需要完成的功能
+- 解析`pam://`并从中心端签出凭据
+- 异常处理
+  
+为了扩展性，Client的创建可参考`secrethub-cli`使用工厂模式，但是目前单一的用途工厂模式不必要。建议参考`run.go`中的`NewRunCommand`函数。
+
+### 其他部分
+基本与`secrethub-cli`一致，按实际需求修改。
 
 ## 测试方法
 
