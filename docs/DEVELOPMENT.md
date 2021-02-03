@@ -87,11 +87,12 @@ Breaks foo.bar api, foo.baz should be used instead
 
 ## 详细设计
 ### 初始化
-- 读取环境变量，获取认证用的`token`
-- 使用`token`创建Client，例如命名为pamClient
+- 读取环境变量，获取认证用的`client_id`和`client_secret`
+- 使用`client_id`和`client_secret`创建Client，例如命名为pamClient
 
 ### pamClient
 需要完成的功能
+- 使用`client_id`和`client_secret`从中心端获取`token`
 - 解析`pam://`并从中心端签出凭据
 - 异常处理
   
