@@ -9,7 +9,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "pamcli",
-	Short: "pamcli is a Command Line Interface of Priviledge Account Manager",
+	Short: "pamcli is a Command Line Interface of Privilege Account Manager",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
