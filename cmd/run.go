@@ -9,10 +9,11 @@ func init() {
 }
 
 var runCmd = &cobra.Command{
-	Use:   "run",
-	Short: "Run a program within PAM context",
-	Long:  `Resolve environment variables and pass them to the target program`,
-	RunE:  runCmdExecute,
+	Use:     "run",
+	Short:   "Run a program within PAM context",
+	Long:    `Resolve environment variables and pass them to the target program`,
+	RunE:    runCmdExecute,
+	Example: "pamcli run -- <command>",
 }
 
 func runCmdExecute(cmd *cobra.Command, args []string) error {
