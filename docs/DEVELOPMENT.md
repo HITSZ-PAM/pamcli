@@ -90,16 +90,33 @@ Breaks foo.bar api, foo.baz should be used instead
 - 读取环境变量，获取认证用的`client_id`和`client_secret`
 - 使用`client_id`和`client_secret`创建Client，例如命名为pamClient
 
-### pamClient
+### PAMClient
 需要完成的功能
 - 使用`client_id`和`client_secret`从中心端获取`token`
 - 解析`pam://`并从中心端签出凭据
 - 异常处理
   
-为了扩展性，Client的创建可参考`secrethub-cli`使用工厂模式，但是目前单一的用途工厂模式不必要。建议参考`run.go`中的`NewRunCommand`函数。
+**struct PAMConfig**
+含有必要的pam连接和认证信息
 
-### 其他部分
-基本与`secrethub-cli`一致，按实际需求修改。
+**NewPAMClient** public 方法，用于从PAMConfig生成一个可用的PAMClient
+如果为了提高扩展性，Client的创建可参考`secrethub-cli`使用工厂模式，但是目前单一的用途工厂模式不必要。参考`run.go`中的`NewRunCommand`函数。此函数需要执行PAMClient.init()
+
+**PAMCLient.init()**
+通过OAuth module获取Token，并存入PAMClient.Token中，配置好一个http.Client等待使用。
+
+**PAMClient.resolve(url String)**
+将url转换为真正的pam接口，并发起请求、解析返回的body。如果出现错误则处理错误。
+
+### runCmd
+参考`secrethub-cli`
+
+
+### Cli Tools
+使用[cobra](https://github.com/spf13/cobra)作为命令行`subcommand`和`flags`的管理库。
+
+### 配置管理
+使用[viper](https://github.com/spf13/viper)读取配置文件、命令行参数或者环境变量，主要用于pamcli自身的配置读取，对环境变量的替换依然使用`os.Environ`的方式。
 
 ## 测试方法
 
