@@ -17,7 +17,7 @@ require (
 	github.com/onsi/ginkgo v1.15.0 // indirect
 	github.com/onsi/gomega v1.10.5 // indirect
 	github.com/smartystreets/assertions v1.2.0 // indirect
-	github.com/spf13/cobra v1.1.2
+	github.com/spf13/cobra v1.1.3
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/tidwall/buntdb v1.1.8 // indirect
 	github.com/tidwall/gjson v1.6.8 // indirect
