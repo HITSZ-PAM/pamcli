@@ -38,7 +38,7 @@ func startMockServer(c models.Client) *httptest.Server {
 	})
 
 	srv.SetResponseErrorHandler(func(re *errors.Response) {
-		log.Println("Response Error:", re.Error.Error())
+		log.Println("Response Error:", re.Description)
 	})
 
 	return httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +63,7 @@ func TestAuth_Token(t *testing.T) {
 				ServerConfig: models.Client{
 					ID:     "000000",
 					Secret: "999999",
-					Domain: "http://localhost",
+					Domain: "https://localhost",
 				},
 			},
 			false,
@@ -78,7 +78,7 @@ func TestAuth_Token(t *testing.T) {
 				TokenURL:     srv.URL,
 			}
 			ctx := context.Background()
-			auth, _ := NewAuth(ctx, config)
+			auth, _ := NewAuth(ctx, &config)
 			token, err := auth.Token()
 
 			if (err != nil) != tt.wantErr {

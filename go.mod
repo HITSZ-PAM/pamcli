@@ -6,6 +6,7 @@ require (
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-oauth2/oauth2/v4 v4.2.0
+	github.com/go-resty/resty/v2 v2.5.0
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/google/uuid v1.2.0 // indirect

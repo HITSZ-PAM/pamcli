@@ -10,14 +10,19 @@ import (
 	cc "golang.org/x/oauth2/clientcredentials"
 )
 
-// Auth is the object used to get token
-// See Token method bellow
-type Auth struct {
-	//for authentication
-	Client *http.Client //Used to interact with the center, implicit token authentication and update logic
+type Auth interface {
+	// Token is used to obtain auth token
+	Token() (string, error)
 }
 
-// Config is the configuration struct of Auth object
+// auth is the object used to get token
+// See Token method bellow
+type auth struct {
+	// for authentication
+	Client *http.Client // Used to interact with the center, implicit token authentication and update logic
+}
+
+// Config is the configuration struct of auth object
 type Config struct {
 	// ClientID is the application's ID.
 	ClientID string
@@ -32,8 +37,8 @@ type Config struct {
 	JwkURL string
 }
 
-//Token get current token. if token is expired, we will refresh it and return new one.
-func (a *Auth) Token() (string, error) {
+// Token get current token. if token is expired, we will refresh it and return new one.
+func (a *auth) Token() (string, error) {
 	trans, ok := a.Client.Transport.(*oauth2.Transport)
 	if !ok {
 		return "", errors.New("wrong type of client transport of auth")
@@ -47,8 +52,8 @@ func (a *Auth) Token() (string, error) {
 	return t.AccessToken, nil
 }
 
-// NewAuth generate a Auth object
-func NewAuth(ctx context.Context, c Config) (*Auth, error) {
+// NewAuth generate a auth object
+func NewAuth(ctx context.Context, c *Config) (Auth, error) {
 	//The new client is used to ignore illegal server certificates
 	realClient := &http.Client{
 		Transport: &http.Transport{
@@ -65,7 +70,7 @@ func NewAuth(ctx context.Context, c Config) (*Auth, error) {
 
 	client := config.Client(ctxWithHTTPClient)
 
-	return &Auth{
+	return &auth{
 		Client: client,
 	}, nil
 }
