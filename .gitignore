@@ -16,3 +16,6 @@
 
 # VSCode Settings
 .vscode/
+
+# Test Script
+setenv.sh

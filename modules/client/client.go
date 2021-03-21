@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
 
 	"github.com/HITSZ-PAM/pamcli/models"
 	"github.com/HITSZ-PAM/pamcli/modules/auth"
@@ -31,7 +32,7 @@ func NewClient(ctx context.Context, c *Config) (Client, error) {
 	authCfg := auth.Config{
 		ClientID:     c.ClientID,
 		ClientSecret: c.ClientSecret,
-		TokenURL:     c.ServerAddr + "/PAM-SSO/oauth2/token",
+		TokenURL:     c.ServerAddr + "/PAM-OAuth/oauth2/token",
 	}
 	oauthClient, err := auth.NewAuth(ctx, &authCfg)
 
@@ -42,6 +43,7 @@ func NewClient(ctx context.Context, c *Config) (Client, error) {
 	apiClient := resty.New()
 	apiClient.SetRetryCount(3)
 	apiClient.SetHostURL(c.ServerAddr)
+	apiClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
 	// return if success
 	return &client{
@@ -60,7 +62,7 @@ func (c *client) Resolve(accountID string) (string, string, error) {
 	resp, err := c.client.R().
 		SetResult(&models.AccountCheckoutResp{}).
 		SetAuthToken(token).
-		Get(endpoint)
+		Put(endpoint)
 	if err != nil {
 		return "", "", err
 	}
