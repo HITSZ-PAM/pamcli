@@ -53,7 +53,7 @@ func (a *auth) Token() (string, error) {
 }
 
 // NewAuth generate a auth object
-func NewAuth(ctx context.Context, c Config) (Auth, error) {
+func NewAuth(ctx context.Context, c *Config) (Auth, error) {
 	//The new client is used to ignore illegal server certificates
 	realClient := &http.Client{
 		Transport: &http.Transport{

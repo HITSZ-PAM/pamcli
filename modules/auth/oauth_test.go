@@ -78,7 +78,7 @@ func TestAuth_Token(t *testing.T) {
 				TokenURL:     srv.URL,
 			}
 			ctx := context.Background()
-			auth, _ := NewAuth(ctx, config)
+			auth, _ := NewAuth(ctx, &config)
 			token, err := auth.Token()
 
 			if (err != nil) != tt.wantErr {
