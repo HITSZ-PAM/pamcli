@@ -24,7 +24,7 @@ jobs:
       run: go test -v ./...
       env:
         PAM_SERVER_URL: ${{ secrets.PAM_SERVER_URL }}
-        PAM_CLIENT_ID: ${{ secrets.PAM_SERVER_URL }}
+        PAM_CLIENT_ID: ${{ secrets.PAM_CLIENT_ID }}
         PAM_CLIENT_SECRET: ${{ secrets.PAM_CLIENT_SECRET }}
         PAM_ACCOUNT_ID: ${{ secrets.PAM_ACCOUNT_ID }}
         PAM_ACCOUNT_USERNAME: ${{ secrets.PAM_ACCOUNT_USERNAME }}
