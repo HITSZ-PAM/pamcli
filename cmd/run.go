@@ -16,14 +16,15 @@ limitations under the License.
 package cmd
 
 import (
-	"os"
-	"fmt"
-	"os/exec"
 	"context"
+	"fmt"
+	"os"
+	"os/exec"
+	"os/signal"
 	"strings"
 	"syscall"
-	"os/signal"
-	"pamcli/modules/client"
+
+	"github.com/HITSZ-PAM/pamcli/modules/client"
 	"github.com/spf13/cobra"
 )
 
@@ -31,16 +32,16 @@ import (
 var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run a program within PAM context",
-	Long: `Resolve environment variables and pass them to the target program`,
-	RunE: func(cmd *cobra.Command, args []string) error{
+	Long:  `Resolve environment variables and pass them to the target program`,
+	RunE: func(cmd *cobra.Command, args []string) error {
 
-		username,password,err := Get_account()
+		username, password, err := Get_account()
 		newEnv := os.Environ()
-		newEnv = append(newEnv,"PAM_ACCOUNT_USERNAME="+username)
-		newEnv = append(newEnv,"PAM_ACCOUNT_PASSWORD="+password)
-		
-		Son_Shell := exec.Command(args[0],args[1:]...)
-		
+		newEnv = append(newEnv, "PAM_ACCOUNT_USERNAME="+username)
+		newEnv = append(newEnv, "PAM_ACCOUNT_PASSWORD="+password)
+
+		Son_Shell := exec.Command(args[0], args[1:]...)
+
 		Son_Shell.Env = newEnv
 		Son_Shell.Stdin = os.Stdin
 		Son_Shell.Stdout = os.Stdout
@@ -103,7 +104,7 @@ func init() {
 	// runCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func Get_account()(string,string,error){
+func Get_account() (string, string, error) {
 	cfg := client.Config{
 		ServerAddr:   os.Getenv("PAM_SERVER_URL"),
 		ClientID:     os.Getenv("PAM_CLIENT_ID"),
@@ -113,12 +114,12 @@ func Get_account()(string,string,error){
 	c, err := client.NewClient(ctx, &cfg)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to create a new client:", err)
-		return "","",err
+		return "", "", err
 	}
-	username,password,err := c.Resolve(os.Getenv("PAM_ACCOUNT_ID"))
+	username, password, err := c.Resolve(os.Getenv("PAM_ACCOUNT_ID"))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to resolve account:", err)
-		return "","",err
+		return "", "", err
 	}
-	return username,password,nil
+	return username, password, nil
 }

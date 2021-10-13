@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "pamcli/cmd"
+import "github.com/HITSZ-PAM/pamcli/cmd"
 
 func main() {
 	cmd.Execute()
