@@ -2,8 +2,10 @@ module github.com/HITSZ-PAM/pamcli
 
 go 1.15
 
+require github.com/tidwall/gjson v1.6.5 // indirect
+
 require (
-	github.com/go-oauth2/oauth2/v4 v4.2.0
+	github.com/go-oauth2/oauth2/v4 v4.4.2
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/golang-jwt/jwt/v4 v4.1.0
 	github.com/spf13/cobra v1.2.1
