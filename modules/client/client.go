@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"crypto/tls"
+	"time"
 
 	"github.com/HITSZ-PAM/pamcli/models"
 	"github.com/HITSZ-PAM/pamcli/modules/auth"
@@ -42,6 +43,7 @@ func NewClient(ctx context.Context, c *Config) (Client, error) {
 	}
 	apiClient := resty.New()
 	apiClient.SetRetryCount(3)
+	apiClient.SetRetryMaxWaitTime(20 * time.Second)
 	apiClient.SetHostURL(c.ServerAddr)
 	apiClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
