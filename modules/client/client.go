@@ -71,7 +71,7 @@ func (c *client) Resolve(accountID string) (string, string, error) {
 		return "", "", err
 	}
 	if resp.StatusCode() != http.StatusOK {
-		return "", "", fmt.Errorf("recieved http error code: %v", resp.StatusCode())
+		return "", "", fmt.Errorf("recieved http error code: %v, body: %v", resp.StatusCode(), resp.Body())
 	}
 
 	return resp.Result().(*models.AccountCheckoutResp).Data.Username,
