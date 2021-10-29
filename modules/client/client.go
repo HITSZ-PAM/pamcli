@@ -3,6 +3,8 @@ package client
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/HITSZ-PAM/pamcli/models"
@@ -67,6 +69,9 @@ func (c *client) Resolve(accountID string) (string, string, error) {
 		Put(endpoint)
 	if err != nil {
 		return "", "", err
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return "", "", fmt.Errorf("recieved http error code: %v", resp.StatusCode())
 	}
 
 	return resp.Result().(*models.AccountCheckoutResp).Data.Username,
