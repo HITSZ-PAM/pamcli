@@ -27,16 +27,10 @@ func Test_client_Resolve(t *testing.T) {
 				t.Errorf("NewClient() error: %v", err)
 				return
 			}
-			got, got1, err := c.Resolve(os.Getenv("PAM_ACCOUNT_ID"))
+			_, _, err = c.Resolve(os.Getenv("PAM_ACCOUNT_ID"))
 			if err != nil {
 				t.Errorf("client.Resolve() error: %v", err)
 				return
-			}
-			if got != os.Getenv("PAM_ACCOUNT_USERNAME") {
-				t.Errorf("client.Resolve() got = %v, want %v", got, os.Getenv("PAM_ACCOUNT_USERNAME"))
-			}
-			if got1 != os.Getenv("PAM_ACCOUNT_PASSWORD") {
-				t.Errorf("client.Resolve() got1 = %v, want %v", got1, os.Getenv("PAM_ACCOUNT_PASSWORD"))
 			}
 		})
 	}
@@ -61,19 +55,13 @@ func Benchmark_client_Resolve(b *testing.B) {
 				b.Errorf("NewClient() error: %v", err)
 				return
 			}
-			got, got1, err := c.Resolve(os.Getenv("PAM_ACCOUNT_ID"))
-			for i := 0; i < b.N; i++ {
-				_, _, _ = c.Resolve(os.Getenv("PAM_ACCOUNT_ID"))
-			}
+			_, _, err = c.Resolve(os.Getenv("PAM_ACCOUNT_ID"))
 			if err != nil {
 				b.Errorf("client.Resolve() error: %v", err)
 				return
 			}
-			if got != os.Getenv("PAM_ACCOUNT_USERNAME") {
-				b.Errorf("client.Resolve() got = %v, want %v", got, os.Getenv("PAM_ACCOUNT_USERNAME"))
-			}
-			if got1 != os.Getenv("PAM_ACCOUNT_PASSWORD") {
-				b.Errorf("client.Resolve() got1 = %v, want %v", got1, os.Getenv("PAM_ACCOUNT_PASSWORD"))
+			for i := 0; i < b.N; i++ {
+				_, _, _ = c.Resolve(os.Getenv("PAM_ACCOUNT_ID"))
 			}
 		})
 	}
