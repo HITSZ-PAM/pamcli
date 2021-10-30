@@ -66,6 +66,7 @@ func (c *client) Resolve(accountID string) (string, string, error) {
 	resp, err := c.client.R().
 		SetResult(&models.AccountCheckoutResp{}).
 		SetAuthToken(token).
+		SetHeader("Referer", c.config.ServerAddr).
 		Put(endpoint)
 	if err != nil {
 		return "", "", err

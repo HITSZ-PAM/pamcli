@@ -18,9 +18,11 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"os/signal"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -35,32 +37,34 @@ var runCmd = &cobra.Command{
 	Long:  `Resolve environment variables and pass them to the target program`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		username, password, err := Get_account()
-		newEnv := os.Environ()
-		newEnv = append(newEnv, "PAM_ACCOUNT_USERNAME="+username)
-		newEnv = append(newEnv, "PAM_ACCOUNT_PASSWORD="+password)
-
-		Son_Shell := exec.Command(args[0], args[1:]...)
-
-		Son_Shell.Env = newEnv
-		Son_Shell.Stdin = os.Stdin
-		Son_Shell.Stdout = os.Stdout
-		Son_Shell.Stderr = os.Stderr
-
-		err = Son_Shell.Start()
+		newEnvList, err := getAccount()
 		if err != nil {
-			return err
+			log.Fatalf("getting account failed: %s", err.Error())
 		}
+
+		subShell := exec.Command(args[0], args[1:]...)
+
+		subShell.Env = newEnvList
+		subShell.Stdin = os.Stdin
+		subShell.Stdout = os.Stdout
+		subShell.Stderr = os.Stderr
 
 		done := make(chan bool, 1)
 		// Pass all signals to child process
 		signals := make(chan os.Signal, 1)
 		signal.Notify(signals)
 
+		// Start subShell
+		err = subShell.Start()
+		if err != nil {
+			return err
+		}
+
+		// Listen to signal and pass through to sub process
 		go func() {
 			select {
 			case s := <-signals:
-				err := Son_Shell.Process.Signal(s)
+				err := subShell.Process.Signal(s)
 				if err != nil && !strings.Contains(err.Error(), "process already finished") {
 					fmt.Fprintln(os.Stderr, err.Error())
 				}
@@ -69,7 +73,11 @@ var runCmd = &cobra.Command{
 				return
 			}
 		}()
-		commandErr := Son_Shell.Wait()
+
+		// Wait for finish
+		commandErr := subShell.Wait()
+
+		// close go routine
 		done <- true
 
 		if commandErr != nil {
@@ -92,34 +100,54 @@ var runCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(runCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// runCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// runCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func Get_account() (string, string, error) {
+// getAccount return a env list
+func getAccount() ([]string, error) {
+
+	// New Client
 	cfg := client.Config{
 		ServerAddr:   os.Getenv("PAM_SERVER_URL"),
 		ClientID:     os.Getenv("PAM_CLIENT_ID"),
 		ClientSecret: os.Getenv("PAM_CLIENT_SECRET"),
 	}
+
 	ctx := context.Background()
 	c, err := client.NewClient(ctx, &cfg)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Failed to create a new client:", err)
-		return "", "", err
+		log.Printf("Failed to create a new client: %v", err)
+		return nil, err
 	}
-	username, password, err := c.Resolve(os.Getenv("PAM_ACCOUNT_ID"))
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Failed to resolve account:", err)
-		return "", "", err
+
+	// Match ENV
+	usernameRegexp := regexp.MustCompile(`pamcli://username/([\d]+)$`)
+	passwordRegexp := regexp.MustCompile(`pamcli://password/([\d]+)$`)
+	valueRegexp := regexp.MustCompile(`=(.*)$`)
+	envList := os.Environ()
+	for idx, env := range envList {
+		params := usernameRegexp.FindStringSubmatch(env)
+		if len(params) == 2 {
+			accoundID := params[1]
+			oldstring := valueRegexp.FindStringSubmatch(env)[1]
+			username, _, err := c.Resolve(accoundID)
+			if err != nil {
+				return nil, fmt.Errorf("error resolving credentials: %s", err.Error())
+			}
+			newEnv := strings.Replace(env, oldstring, username, 1) // 1 means first occurance
+			envList[idx] = newEnv
+		}
+		params = passwordRegexp.FindStringSubmatch(env)
+		if len(params) == 2 {
+			accoundID := params[1]
+			oldstring := valueRegexp.FindStringSubmatch(env)[1]
+			_, password, err := c.Resolve(accoundID)
+			if err != nil {
+				return nil, fmt.Errorf("error resolving credentials: %s", err.Error())
+			}
+			newEnv := strings.Replace(env, oldstring, password, 1) // 1 means first occurance
+			envList[idx] = newEnv
+		}
 	}
-	return username, password, nil
+
+	return envList, nil
 }
