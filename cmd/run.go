@@ -16,8 +16,10 @@ limitations under the License.
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -37,7 +39,21 @@ var runCmd = &cobra.Command{
 	Long:  `Resolve environment variables and pass them to the target program`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		newEnvList, err := getAccount()
+		// New Client
+		secret := os.Getenv("PAM_CLIENT_SECRET")
+		cfg := client.Config{
+			ServerAddr:   os.Getenv("PAM_SERVER_URL"),
+			ClientID:     os.Getenv("PAM_CLIENT_ID"),
+			ClientSecret: secret,
+		}
+
+		ctx := context.Background()
+		c, err := client.NewClient(ctx, &cfg)
+		if err != nil {
+			log.Printf("Failed to create a new client: %v", err)
+			return err
+		}
+		newEnvList, secrets, err := getAccount(c)
 		if err != nil {
 			log.Fatalf("getting account failed: %s", err.Error())
 		}
@@ -46,8 +62,15 @@ var runCmd = &cobra.Command{
 
 		subShell.Env = newEnvList
 		subShell.Stdin = os.Stdin
-		subShell.Stdout = os.Stdout
-		subShell.Stderr = os.Stderr
+		subStdout, err := subShell.StdoutPipe()
+		if err != nil {
+			panic(err) // Really under no circumstances should this happen
+		}
+		subStderr, err := subShell.StderrPipe()
+		if err != nil {
+			panic(err) // Really under no circumstances should this happen
+		}
+		subShellStdoutScanner := bufio.NewScanner(io.MultiReader(subStdout, subStderr))
 
 		done := make(chan bool, 1)
 		// Pass all signals to child process
@@ -73,6 +96,19 @@ var runCmd = &cobra.Command{
 				return
 			}
 		}()
+
+		for subShellStdoutScanner.Scan() {
+			line := subShellStdoutScanner.Text()
+			line = strings.Replace(line, secret, "***", -1) // replace client token
+			for _, s := range secrets {
+				line = strings.Replace(line, s, "***", -1) // replace any resolved credential
+			}
+			fmt.Println(line)
+		}
+
+		if err = subShellStdoutScanner.Err(); err != nil {
+			fmt.Fprintf(os.Stderr, "Invalid output: %s", err.Error())
+		}
 
 		// Wait for finish
 		commandErr := subShell.Wait()
@@ -102,52 +138,49 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 }
 
-// getAccount return a env list
-func getAccount() ([]string, error) {
+// getAccount gets the credential from PAM
+// return newEnvList, secretList, error
+func getAccount(c client.Client) ([]string, []string, error) {
 
-	// New Client
-	cfg := client.Config{
-		ServerAddr:   os.Getenv("PAM_SERVER_URL"),
-		ClientID:     os.Getenv("PAM_CLIENT_ID"),
-		ClientSecret: os.Getenv("PAM_CLIENT_SECRET"),
-	}
-
-	ctx := context.Background()
-	c, err := client.NewClient(ctx, &cfg)
-	if err != nil {
-		log.Printf("Failed to create a new client: %v", err)
-		return nil, err
-	}
+	// Secrets
+	var secretList []string
 
 	// Match ENV
 	usernameRegexp := regexp.MustCompile(`pamcli://username/([\d]+)$`)
 	passwordRegexp := regexp.MustCompile(`pamcli://password/([\d]+)$`)
 	valueRegexp := regexp.MustCompile(`=(.*)$`)
+
 	envList := os.Environ()
+
 	for idx, env := range envList {
+
+		// Username
 		params := usernameRegexp.FindStringSubmatch(env)
 		if len(params) == 2 {
 			accoundID := params[1]
 			oldstring := valueRegexp.FindStringSubmatch(env)[1]
 			username, _, err := c.Resolve(accoundID)
 			if err != nil {
-				return nil, fmt.Errorf("error resolving credentials: %s", err.Error())
+				return nil, nil, fmt.Errorf("error resolving credentials: %s", err.Error())
 			}
 			newEnv := strings.Replace(env, oldstring, username, 1) // 1 means first occurance
+			secretList = append(secretList, username)
 			envList[idx] = newEnv
 		}
+
+		// Password
 		params = passwordRegexp.FindStringSubmatch(env)
 		if len(params) == 2 {
 			accoundID := params[1]
 			oldstring := valueRegexp.FindStringSubmatch(env)[1]
 			_, password, err := c.Resolve(accoundID)
 			if err != nil {
-				return nil, fmt.Errorf("error resolving credentials: %s", err.Error())
+				return nil, nil, fmt.Errorf("error resolving credentials: %s", err.Error())
 			}
 			newEnv := strings.Replace(env, oldstring, password, 1) // 1 means first occurance
+			secretList = append(secretList, password)
 			envList[idx] = newEnv
 		}
 	}
-
-	return envList, nil
+	return envList, secretList, nil
 }
