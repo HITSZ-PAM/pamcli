@@ -5,7 +5,7 @@ pipeline {
 			def root = tool type: 'go', name: 'Go Build Env'
 
     		// Export environment variables pointing to the directory where Go was installed
-    		withEnv(["GOROOT=${root}", "PATH+GO=${root}/bin"]) {
+    		steps {
       		  	sh 'go version'
     		}
 		}
@@ -13,11 +13,14 @@ pipeline {
 			def root = tool type: 'go', name: 'Go Build Env'
 
     		// Export environment variables pointing to the directory where Go was installed
-    		withEnv(["GOROOT=${root}", "PATH+GO=${root}/bin"]) {
+    		steps {
       		  	sh 'go build'
     		}
 		}
 		stage('Deploy') {
+			environment {
+				DEMO_PASSWORD = credentials('demo_password')
+			}
 			steps {
 				sh 'echo $DEMO_PASSWORD'
 			}
